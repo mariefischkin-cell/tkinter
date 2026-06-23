@@ -1,135 +1,154 @@
-from tkinter import *
-from tkinter import messagebox
-from PIL import Image, ImageTk
+# Import tkinter for GUI and ttk for improved widgets
+import tkinter as tk
+from tkinter import ttk, messagebox
 
-# -------------------------------
-# Setting up Main Window
-# ---------------------------
-root = Tk()
-root.title("Denomination Counter")
-root.configure(bg="light blue")
-root.geometry("650x400")
+# Define the RestaurantOrderManagementApp class
+class RestaurantOrderManagement:
+    # Initialize the application
+    def __init__(self, root):
+        self.root = root  # The main window of the app
+        self.root.title("Restaurant Management App")  # Set the title of the window
 
-# -------------------------------
-# Adding Image and Labels in Main Window
-# -------------------------------
-upload = Image.open("/Users/der.coole.account/Desktop/Neuer Ordner 2/denomination calculator/app_img.jpg")
-upload = upload.resize((300, 300))
-image = ImageTk.PhotoImage(upload)
+        # A dictionary to store the menu items and their prices
+        self.menu_items = {
+            "FRIES MEAL": 2,
+            "LUNCH MEAL": 2,
+            "BURGER MEAL": 3,
+            "PIZZA MEAL": 4,
+            "CHEESE BURGER": 2.5,
+            "DRINKS": 1
+        }
 
-label = Label(root, image=image, bg="light blue")
-label.place(x=180, y=20)
+        self.exchange_rate = 82  # Exchange rate for currency conversion
 
-label1 = Label(
-    root,
-    text="Hey User! Welcome to Denomination Counter Application.",
-    bg="light blue"
-)
-label1.place(relx=0.5, y=340, anchor=CENTER)
+        self.setup_background(root)  # Set up the background image
 
-# -------------------------------
-# Function to open messagebox
-# -------------------------------
-def msg():
-    MsgBox = messagebox.showinfo(
-        "Alert",
-        "Do you want to calculate the denomination count?"
-    )
-    if MsgBox == "ok":
-        topwin()
+        # Create a frame to hold the widgets
+        frame = ttk.Frame(root)
+        frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
 
-# -------------------------------
-# Adding Button in Main Window
-# -------------------------------
-button1 = Button(
-    root,
-    text="Let's get started!",
-    command=msg,
-    bg="brown",
-    fg="white"
-)
-button1.place(x=260, y=360)
+        # Heading label
+        ttk.Label(
+            frame,
+            text="Restaurant Order Management",
+            font=("Arial", 20, "bold")
+        ).grid(row=0, columnspan=3, padx=10, pady=10)
 
-# -------------------------------
-# Function for opening new/top window
-# -------------------------------
-def topwin():
-    top = Toplevel()
-    top.title("Denominations Calculator")
-    top.configure(bg="light grey")
-    top.geometry("600x350+50+50")
+        self.menu_labels = {}       # To store references to menu item labels
+        self.menu_quantities = {}   # To store references to quantity entry widgets
 
-    label = Label(top, text="Enter total amount", bg="light grey")
-    entry = Entry(top)
+        # Create labels and entry widgets for each menu item
+        for i, (item, price) in enumerate(self.menu_items.items(), start=1):
+            label = ttk.Label(
+                frame,
+                text=f"{item} (${price}):",
+                font=("Arial", 12)
+            )
+            label.grid(row=i, column=0, padx=10, pady=5)
+            self.menu_labels[item] = label
 
-    lbl = Label(
-        top,
-        text="Here are number of notes for each denomination",
-        bg="light grey"
-    )
+            quantity_entry = ttk.Entry(frame, width=5)
+            quantity_entry.grid(row=i, column=1, padx=10, pady=5)
+            self.menu_quantities[item] = quantity_entry
 
-    l1 = Label(top, text="2000", bg="light grey")
-    l2 = Label(top, text="500", bg="light grey")
-    l3 = Label(top, text="100", bg="light grey")
+        # Currency selection
+        self.currency_var = tk.StringVar()
+        ttk.Label(
+            frame,
+            text="Currency:",
+            font=("Arial", 12)
+        ).grid(
+            row=len(self.menu_items) + 1,
+            column=0,
+            padx=10,
+            pady=5
+        )
 
-    t1 = Entry(top)
-    t2 = Entry(top)
-    t3 = Entry(top)
+        # Dropdown for currency selection
+        currency_dropdown = ttk.Combobox(
+            frame,
+            textvariable=self.currency_var,
+            state="readonly",
+            width=18,
+            values=("USD", "INR")
+        )
+        currency_dropdown.grid(
+            row=len(self.menu_items) + 1,
+            column=1,
+            padx=10,
+            pady=5
+        )
+        currency_dropdown.current(0)  # Set default currency
+        self.currency_var.trace("w", self.update_menu_prices)
 
-    # -------------------------------
-    # Calculation Function
-    # -------------------------------
-    def calculator():
-        try:
-            amount = int(entry.get())
+        # Button to place the order
+        order_button = ttk.Button(
+            frame,
+            text="Place Order",
+            command=self.place_order
+        )
+        order_button.grid(
+            row=len(self.menu_items) + 2,
+            columnspan=3,
+            padx=10,
+            pady=10
+        )
 
-            note2000 = amount // 2000
-            amount %= 2000
+    # Method to set up the background image
+    def setup_background(self, root):
+        bg_width, bg_height = 800, 600
+        canvas = tk.Canvas(root, width=bg_width, height=bg_height)
+        canvas.pack()
 
-            note500 = amount // 500
-            amount %= 500
+        original_image = tk.PhotoImage(file=r"/Users/der.coole.account/Desktop/Neuer Ordner 2/restaurant order manegement system/background.png")
+        background_image = original_image.subsample(
+            original_image.width() // bg_width,
+            original_image.height() // bg_height
+        )
 
-            note100 = amount // 100
+        canvas.create_image(0, 0, anchor=tk.NW, image=background_image)
+        canvas.image = background_image
 
-            t1.delete(0, END)
-            t2.delete(0, END)
-            t3.delete(0, END)
+    # Method to update the menu prices based on the selected currency
+    def update_menu_prices(self, *args):
+        currency = self.currency_var.get()
+        symbol = "₹" if currency == "INR" else "$"
+        rate = self.exchange_rate if currency == "INR" else 1
 
-            t1.insert(END, str(note2000))
-            t2.insert(END, str(note500))
-            t3.insert(END, str(note100))
+        for item, label in self.menu_labels.items():
+            price = self.menu_items[item] * rate
+            label.config(text=f"{item} ({symbol}{price}):")
 
-        except ValueError:
-            messagebox.showerror("Error", "Please enter a valid number.")
+    # Method to place an order
+    def place_order(self):
+        total_cost = 0
+        order_summary = "Order Summary:\n"
+        currency = self.currency_var.get()
+        symbol = "₹" if currency == "INR" else "$"
+        rate = self.exchange_rate if currency == "INR" else 1
 
-    btn = Button(
-        top,
-        text="Calculate",
-        command=calculator,
-        bg="brown",
-        fg="white"
-    )
+        for item, entry in self.menu_quantities.items():
+            quantity = entry.get()
+            if quantity.isdigit():
+                quantity = int(quantity)
+                price = self.menu_items[item] * rate
+                cost = quantity * price
+                total_cost += cost
 
-    # -------------------------------
-    # Placing Widgets
-    # -------------------------------
-    label.place(x=230, y=50)
-    entry.place(x=200, y=80)
-    btn.place(x=240, y=120)
+                if quantity > 0:
+                    order_summary += (
+                        f"{item}: {quantity} x {symbol}{price} = {symbol}{cost}\n"
+                    )
 
-    lbl.place(x=140, y=170)
+        if total_cost > 0:
+            order_summary += f"\nTotal Cost: {symbol}{total_cost}"
+            messagebox.showinfo("Order Placed", order_summary)
+        else:
+            messagebox.showerror("Error", "Please order at least one item.")
 
-    l1.place(x=180, y=200)
-    l2.place(x=180, y=230)
-    l3.place(x=180, y=260)
-
-    t1.place(x=270, y=200)
-    t2.place(x=270, y=230)
-    t3.place(x=270, y=260)
-
-    top.mainloop()
-
-# -------------------------------
-# Start Main Loop
-# -------------------------------
-root.mainloop()
+# Main block to run the app
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = RestaurantOrderManagement(root)
+    root.geometry("800x600")  # Set the size of the window
+    root.mainloop()           # Start the GUI loop
